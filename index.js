@@ -12,6 +12,10 @@ const parse = (data) => {
   console.log('strigifyData ->', strigifyData)
   const [command, value] = strigifyData.split(' ');
   return { command, value };
+};
+
+const getStringForSend = ({ command, value }) => {
+  return `${command}_${value}`;
 }
 
 const moveMouse = async ({ command, value }) => {
@@ -19,16 +23,20 @@ const moveMouse = async ({ command, value }) => {
   switch (command) {
     case 'mouse_left':
       await mouse.move(left(Number(value)));
-      break;
+      return getStringForSend({ command, value });
     case 'mouse_right':
       await mouse.move(right(Number(value)));
-      break;
+      return getStringForSend({ command, value });
     case 'mouse_up':
       await mouse.move(up(Number(value)));
-      break;
+      return getStringForSend({ command, value });
     case 'mouse_down':
       await mouse.move(down(Number(value)));
-      break;
+      return getStringForSend({ command, value });
+    case 'mouse_position':
+      const cursorPosition = await mouse.getPosition();
+      const coordsToString = `x_${cursorPosition.x}_y_${cursorPosition.y}`;
+      return getStringForSend({ command, value: coordsToString });
   }
 };
 
@@ -39,12 +47,8 @@ wss.on('connection', function connection(ws) {
   ws.on('message', async (data) => {
     console.log(data);
     const parsedData = parse(data);
-    const { command, value } = parsedData;
-    const sendedString = `${command}_${value}`;
-    await moveMouse(parsedData);
+    const sendedString = await moveMouse(parsedData);
     console.log('received: %s', data);
     ws.send(sendedString);
   });
-
-  
 });
